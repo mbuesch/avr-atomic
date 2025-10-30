@@ -238,11 +238,11 @@ mod test {
     #[test]
     fn test_bool() {
         let a: AvrAtomic<bool> = AvrAtomic::new();
-        assert_eq!(a.get(), false);
+        assert!(!a.get());
         a.set(true);
-        assert_eq!(a.get(), true);
+        assert!(a.get());
         a.set(false);
-        assert_eq!(a.get(), false);
+        assert!(!a.get());
     }
 }
 
