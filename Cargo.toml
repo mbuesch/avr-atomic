@@ -1,0 +1,17 @@
+[package]
+name = "avr-atomic"
+description = "Fast atomic load/store without IRQ-disable for AVR"
+version = "1.0.0"
+authors = [ "Michael Büsch <m@bues.ch>" ]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+homepage = "https://bues.ch/"
+repository = "https://github.com/mbuesch/avr-atomic"
+readme = "README.md"
+categories = [ "embedded", "hardware-support", "no-std" ]
+keywords = [ "avr", "atomic" ]
+
+[dependencies]
+
+[lints.clippy]
+undocumented_unsafe_blocks = "warn"
