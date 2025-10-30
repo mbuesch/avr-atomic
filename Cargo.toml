@@ -1,6 +1,6 @@
 [package]
 name = "avr-atomic"
-description = "Simple atomic load/store without IRQ-disable for AVR"
+description = "Fast atomic load/store without IRQ-disable for AVR"
 version = "1.0.0"
 authors = [ "Michael Büsch <m@bues.ch>" ]
 edition = "2024"
