@@ -12,3 +12,6 @@ categories = [ "embedded", "hardware-support", "no-std" ]
 keywords = [ "avr", "atomic" ]
 
 [dependencies]
+
+[lints.clippy]
+undocumented_unsafe_blocks = "warn"
