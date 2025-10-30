@@ -97,44 +97,59 @@ unsafe fn write_atomic(ptr: *mut u8, value: u8) {
 /// Trait convert to and from the raw `u8` value.
 pub trait AvrAtomicConvert: Copy {
     /// Convert from `u8` to `Self`.
-    fn from_u8(value: u8) -> Self;
+    ///
+    /// # Safety
+    ///
+    /// This function must create a valid `Self` value from the `value` byte.
+    /// Note that a `value` of `0_u8` must always be expected and handled correctly,
+    /// because `0_u8` is the initialization value of [AvrAtomic].
+    ///
+    /// It is guaranteed that this function will only ever be passed values
+    /// that came from `to_u8()` or are equal to `0_u8`,
+    /// even if `to_u8()` never returned `0_u8`.
+    unsafe fn from_u8(value: u8) -> Self;
 
     /// Convert from `Self` to `u8`.
-    fn to_u8(self) -> u8;
+    ///
+    /// # Safety
+    ///
+    /// This function must create an `u8` byte that is possible to be converted
+    /// back into the same `Self` value by `from_u8`.
+    unsafe fn to_u8(self) -> u8;
 }
 
 impl AvrAtomicConvert for u8 {
     #[inline(always)]
-    fn from_u8(value: u8) -> Self {
+    unsafe fn from_u8(value: u8) -> Self {
         value
     }
 
     #[inline(always)]
-    fn to_u8(self) -> u8 {
+    unsafe fn to_u8(self) -> u8 {
         self
     }
 }
 
 impl AvrAtomicConvert for i8 {
     #[inline(always)]
-    fn from_u8(value: u8) -> Self {
+    unsafe fn from_u8(value: u8) -> Self {
         value as _
     }
 
     #[inline(always)]
-    fn to_u8(self) -> u8 {
+    unsafe fn to_u8(self) -> u8 {
         self as _
     }
 }
 
 impl AvrAtomicConvert for bool {
     #[inline(always)]
-    fn from_u8(value: u8) -> Self {
+    unsafe fn from_u8(value: u8) -> Self {
         value != 0
     }
 
     #[inline(always)]
-    fn to_u8(self) -> u8 {
+    unsafe fn to_u8(self) -> u8 {
         self as _
     }
 }
@@ -170,7 +185,7 @@ pub struct AvrAtomic<T> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: AvrAtomicConvert> AvrAtomic<T> {
+impl<T> AvrAtomic<T> {
     /// Create a new [AvrAtomic] with the initial interior data being `0_u8`.
     #[inline(always)]
     pub const fn new() -> AvrAtomic<T> {
@@ -180,14 +195,38 @@ impl<T: AvrAtomicConvert> AvrAtomic<T> {
         }
     }
 
+    /// Atomically read as raw `u8` byte.
+    ///
+    /// This atomic read is also a full SeqCst memory barrier.
+    #[inline(always)]
+    pub fn get_raw(&self) -> u8 {
+        // SAFETY: The pointer passed to `read_atomic` is a valid pointer to `u8`.
+        unsafe { read_atomic(self.data.get()) }
+    }
+
+    /// Atomically write as raw `u8` byte.
+    ///
+    /// This atomic write is also a full SeqCst memory barrier.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that `value` is properly encoded to represent a valid `T`.
+    #[inline(always)]
+    pub unsafe fn set_raw(&self, value: u8) {
+        // SAFETY: The pointer passed to `write_atomic` is a valid pointer to `u8`.
+        unsafe { write_atomic(self.data.get(), value) }
+    }
+}
+
+impl<T: AvrAtomicConvert> AvrAtomic<T> {
     /// Atomically read the current value.
     ///
     /// This atomic read is also a full SeqCst memory barrier.
     #[inline(always)]
     pub fn get(&self) -> T {
-        // SAFETY: The pointer passed to `read_atomic` is a valid pointer to `u8`.
-        let value = unsafe { read_atomic(self.data.get()) };
-        T::from_u8(value)
+        let value = self.get_raw();
+        // SAFETY: The setters always ensure that the raw value is a valid `T`.
+        unsafe { T::from_u8(value) }
     }
 
     /// Atomically write a new value.
@@ -195,13 +234,12 @@ impl<T: AvrAtomicConvert> AvrAtomic<T> {
     /// This atomic write is also a full SeqCst memory barrier.
     #[inline(always)]
     pub fn set(&self, value: T) {
-        let value = value.to_u8();
-        // SAFETY: The pointer passed to `write_atomic` is a valid pointer to `u8`.
-        unsafe { write_atomic(self.data.get(), value) }
+        // SAFETY: The `value` is properly encoded to represent `T`.
+        unsafe { self.set_raw(value.to_u8()) };
     }
 }
 
-impl<T: AvrAtomicConvert> Default for AvrAtomic<T> {
+impl<T> Default for AvrAtomic<T> {
     #[inline(always)]
     fn default() -> Self {
         Self::new()
