@@ -186,7 +186,7 @@ pub struct AvrAtomic<T> {
 }
 
 impl<T> AvrAtomic<T> {
-    /// Create a new [AvrAtomic] with the initial interior data being `0_u8`.
+    /// Create a new [AvrAtomic] with the initial interior raw data being `0_u8`.
     #[inline(always)]
     pub const fn new() -> AvrAtomic<T> {
         Self {
@@ -219,6 +219,16 @@ impl<T> AvrAtomic<T> {
 }
 
 impl<T: AvrAtomicConvert> AvrAtomic<T> {
+    /// Create a new [AvrAtomic] initialized to `value`.
+    pub fn new_value(value: T) -> Self {
+        // SAFETY: `to_u8` always returns a valid value.
+        let value = unsafe { value.to_u8() };
+        Self {
+            data: UnsafeCell::new(value),
+            _phantom: PhantomData,
+        }
+    }
+
     /// Atomically read the current value.
     ///
     /// This atomic read is also a full SeqCst memory barrier.
@@ -261,6 +271,9 @@ mod test {
         assert_eq!(a.get(), 0x5A);
         a.set(0);
         assert_eq!(a.get(), 0);
+
+        let a: AvrAtomic<u8> = AvrAtomic::new_value(99);
+        assert_eq!(a.get(), 99);
     }
 
     #[test]
@@ -271,6 +284,9 @@ mod test {
         assert_eq!(a.get(), -42);
         a.set(0);
         assert_eq!(a.get(), 0);
+
+        let a: AvrAtomic<i8> = AvrAtomic::new_value(-99);
+        assert_eq!(a.get(), -99);
     }
 
     #[test]
@@ -281,6 +297,9 @@ mod test {
         assert!(a.get());
         a.set(false);
         assert!(!a.get());
+
+        let a: AvrAtomic<bool> = AvrAtomic::new_value(true);
+        assert!(a.get());
     }
 }
 
