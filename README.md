@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`:
 avr-atomic = "1"
 ```
 
-## Example
+## Example: Basic types u8, i8, bool
 
 ```rust
 use avr_atomic::AvrAtomic;
@@ -33,6 +33,36 @@ fn foo() {
 
     VALUE_BOOL.set(true);
     let value = VALUE_BOOL.get();
+}
+```
+
+## Example: User defined type
+
+```rust
+use avr_atomic::{AvrAtomic, AvrAtomicConvert};
+
+#[derive(Copy, Clone)]
+struct MyFoo {
+    inner: u8,
+}
+
+impl AvrAtomicConvert for MyFoo {
+    fn from_u8(value: u8) -> Self {
+        Self { inner: value }
+    }
+
+    fn to_u8(self) -> u8 {
+        self.inner
+    }
+}
+
+static VALUE: AvrAtomic<MyFoo> = AvrAtomic::new();
+
+fn foo() {
+    VALUE.set(MyFoo { inner: 2 } );
+
+    let value = VALUE.get();
+    assert_eq!(value.inner, 2);
 }
 ```
 

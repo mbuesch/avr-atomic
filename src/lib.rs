@@ -35,24 +35,24 @@
 //!
 //! #[derive(Copy, Clone)]
 //! struct MyFoo {
-//!     value: u8,
+//!     inner: u8,
 //! }
 //!
 //! impl AvrAtomicConvert for MyFoo {
 //!     fn from_u8(value: u8) -> Self {
-//!         Self { value }
+//!         Self { inner: value }
 //!     }
 //!
 //!     fn to_u8(self) -> u8 {
-//!         self.value
+//!         self.inner
 //!     }
 //! }
 //!
 //! static VALUE: AvrAtomic<MyFoo> = AvrAtomic::new();
 //!
-//! assert_eq!(VALUE.get().value, 0);
-//! VALUE.set(MyFoo { value: 2 } );
-//! assert_eq!(VALUE.get().value, 2);
+//! assert_eq!(VALUE.get().inner, 0);
+//! VALUE.set(MyFoo { inner: 2 } );
+//! assert_eq!(VALUE.get().inner, 2);
 //! ```
 
 #![cfg_attr(target_arch = "avr", no_std)]
