@@ -15,17 +15,17 @@
 //! static VALUE_I8: AvrAtomic<i8> = AvrAtomic::new();
 //! static VALUE_BOOL: AvrAtomic<bool> = AvrAtomic::new();
 //!
-//! assert_eq!(VALUE_U8.get(), 0);
-//! VALUE_U8.set(0x42);
-//! assert_eq!(VALUE_U8.get(), 0x42);
+//! assert_eq!(VALUE_U8.load(), 0);
+//! VALUE_U8.store(0x42);
+//! assert_eq!(VALUE_U8.load(), 0x42);
 //!
-//! assert_eq!(VALUE_I8.get(), 0);
-//! VALUE_I8.set(-42);
-//! assert_eq!(VALUE_I8.get(), -42);
+//! assert_eq!(VALUE_I8.load(), 0);
+//! VALUE_I8.store(-42);
+//! assert_eq!(VALUE_I8.load(), -42);
 //!
-//! assert_eq!(VALUE_BOOL.get(), false);
-//! VALUE_BOOL.set(true);
-//! assert_eq!(VALUE_BOOL.get(), true);
+//! assert_eq!(VALUE_BOOL.load(), false);
+//! VALUE_BOOL.store(true);
+//! assert_eq!(VALUE_BOOL.load(), true);
 //! ```
 //!
 //! # Implement AvrAtomic for your own type
@@ -50,9 +50,9 @@
 //!
 //! static VALUE: AvrAtomic<MyFoo> = AvrAtomic::new();
 //!
-//! assert_eq!(VALUE.get().inner, 0);
-//! VALUE.set(MyFoo { inner: 2 } );
-//! assert_eq!(VALUE.get().inner, 2);
+//! assert_eq!(VALUE.load().inner, 0);
+//! VALUE.store(MyFoo { inner: 2 } );
+//! assert_eq!(VALUE.load().inner, 2);
 //! ```
 
 #![cfg_attr(target_arch = "avr", no_std)]
@@ -251,7 +251,7 @@ impl<T> AvrAtomic<T> {
     ///
     /// This atomic read is also a full SeqCst memory barrier.
     #[inline(always)]
-    pub fn get_raw(&self) -> u8 {
+    pub fn load_raw(&self) -> u8 {
         // SAFETY: The pointer passed to `read_atomic` is a valid pointer to `u8`.
         unsafe { read_atomic(self.data.get()) }
     }
@@ -264,7 +264,7 @@ impl<T> AvrAtomic<T> {
     ///
     /// The caller must ensure that `value` is properly encoded to represent a valid `T`.
     #[inline(always)]
-    pub unsafe fn set_raw(&self, value: u8) {
+    pub unsafe fn store_raw(&self, value: u8) {
         // SAFETY: The pointer passed to `write_atomic` is a valid pointer to `u8`.
         unsafe { write_atomic(self.data.get(), value) }
     }
@@ -285,17 +285,17 @@ impl<T: AvrAtomicConvert> AvrAtomic<T> {
     ///
     /// This atomic read is also a full SeqCst memory barrier.
     #[inline(always)]
-    pub fn get(&self) -> T {
-        T::from_u8(self.get_raw())
+    pub fn load(&self) -> T {
+        T::from_u8(self.load_raw())
     }
 
     /// Atomically write a new value.
     ///
     /// This atomic write is also a full SeqCst memory barrier.
     #[inline(always)]
-    pub fn set(&self, value: T) {
+    pub fn store(&self, value: T) {
         // SAFETY: The `value` is properly encoded to represent `T`.
-        unsafe { self.set_raw(value.to_u8()) };
+        unsafe { self.store_raw(value.to_u8()) };
     }
 }
 
@@ -316,40 +316,40 @@ mod test {
     #[test]
     fn test_u8() {
         let a: AvrAtomic<u8> = AvrAtomic::new();
-        assert_eq!(a.get(), 0);
-        a.set(0x5A);
-        assert_eq!(a.get(), 0x5A);
-        a.set(0);
-        assert_eq!(a.get(), 0);
+        assert_eq!(a.load(), 0);
+        a.store(0x5A);
+        assert_eq!(a.load(), 0x5A);
+        a.store(0);
+        assert_eq!(a.load(), 0);
 
         let a: AvrAtomic<u8> = AvrAtomic::new_value(99);
-        assert_eq!(a.get(), 99);
+        assert_eq!(a.load(), 99);
     }
 
     #[test]
     fn test_i8() {
         let a: AvrAtomic<i8> = AvrAtomic::new();
-        assert_eq!(a.get(), 0);
-        a.set(-42);
-        assert_eq!(a.get(), -42);
-        a.set(0);
-        assert_eq!(a.get(), 0);
+        assert_eq!(a.load(), 0);
+        a.store(-42);
+        assert_eq!(a.load(), -42);
+        a.store(0);
+        assert_eq!(a.load(), 0);
 
         let a: AvrAtomic<i8> = AvrAtomic::new_value(-99);
-        assert_eq!(a.get(), -99);
+        assert_eq!(a.load(), -99);
     }
 
     #[test]
     fn test_bool() {
         let a: AvrAtomic<bool> = AvrAtomic::new();
-        assert!(!a.get());
-        a.set(true);
-        assert!(a.get());
-        a.set(false);
-        assert!(!a.get());
+        assert!(!a.load());
+        a.store(true);
+        assert!(a.load());
+        a.store(false);
+        assert!(!a.load());
 
         let a: AvrAtomic<bool> = AvrAtomic::new_value(true);
-        assert!(a.get());
+        assert!(a.load());
     }
 }
 

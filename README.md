@@ -25,14 +25,14 @@ static VALUE_I8: AvrAtomic<i8> = AvrAtomic::new();
 static VALUE_BOOL: AvrAtomic<bool> = AvrAtomic::new();
 
 fn foo() {
-    VALUE_U8.set(0x42);
-    let value = VALUE_U8.get();
+    VALUE_U8.store(0x42);
+    let value = VALUE_U8.load();
 
-    VALUE_I8.set(-42);
-    let value = VALUE_I8.get();
+    VALUE_I8.store(-42);
+    let value = VALUE_I8.load();
 
-    VALUE_BOOL.set(true);
-    let value = VALUE_BOOL.get();
+    VALUE_BOOL.store(true);
+    let value = VALUE_BOOL.load();
 }
 ```
 
@@ -59,9 +59,9 @@ impl AvrAtomicConvert for MyFoo {
 static VALUE: AvrAtomic<MyFoo> = AvrAtomic::new();
 
 fn foo() {
-    VALUE.set(MyFoo { inner: 2 } );
+    VALUE.store(MyFoo { inner: 2 } );
 
-    let value = VALUE.get();
+    let value = VALUE.load();
     assert_eq!(value.inner, 2);
 }
 ```
