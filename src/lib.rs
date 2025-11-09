@@ -82,7 +82,7 @@ unsafe fn read_atomic_avr(ptr: *const u8) -> u8 {
             in("r26") r26,
             in("r27") r27,
             value = out(reg) value,
-            options(nostack),
+            options(nostack, preserves_flags),
         );
     }
     value
@@ -125,7 +125,7 @@ unsafe fn write_atomic_avr(ptr: *mut u8, value: u8) {
             in("r26") r26,
             in("r27") r27,
             value = in(reg) value,
-            options(nostack),
+            options(nostack, preserves_flags),
         );
     }
 }
